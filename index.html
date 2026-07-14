@@ -511,7 +511,7 @@
             </div>
 
             <div id="job-list">
-                <!-- Oferta para el día siguiente (Mañana) - 100 PUNTOS -->
+                <!-- Oferta para el día +1 - 100 PUNTOS -->
                 <div class="job-card" data-job="1" data-day-offset="1">
                     <div class="job-header">
                         <span class="job-availability">1 disponible</span>
@@ -613,7 +613,7 @@
                     this.jobsAgendados = [];
                     this.currentFilter = '0';
                     this.isAgendando = false;
-                    this.mostrarMensajeAgendado = false; // ← NUEVO: controla cuándo mostrar el empty state
+                    this.mostrarMensajeAgendado = false;
                     this.init();
                 }
 
@@ -639,18 +639,23 @@
                     const now = new Date();
                     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                     
+                    // Día 0: Hoy
                     const todayBtn = document.createElement('button');
                     todayBtn.className = 'day-filter active';
                     todayBtn.dataset.day = '0';
                     todayBtn.textContent = 'Hoy';
                     filtersContainer.appendChild(todayBtn);
                     
-                    const tomorrowBtn = document.createElement('button');
-                    tomorrowBtn.className = 'day-filter has-offer';
-                    tomorrowBtn.dataset.day = '1';
-                    tomorrowBtn.textContent = 'Mañana';
-                    filtersContainer.appendChild(tomorrowBtn);
+                    // Día 1: nombre del día de la semana (con oferta)
+                    const day1Date = new Date(now);
+                    day1Date.setDate(now.getDate() + 1);
+                    const day1Btn = document.createElement('button');
+                    day1Btn.className = 'day-filter has-offer';
+                    day1Btn.dataset.day = '1';
+                    day1Btn.textContent = days[day1Date.getDay()];
+                    filtersContainer.appendChild(day1Btn);
                     
+                    // Día 2: nombre del día de la semana
                     const day2Date = new Date(now);
                     day2Date.setDate(now.getDate() + 2);
                     const day2Btn = document.createElement('button');
@@ -659,6 +664,7 @@
                     day2Btn.textContent = days[day2Date.getDay()];
                     filtersContainer.appendChild(day2Btn);
                     
+                    // Día 3: nombre del día de la semana
                     const day3Date = new Date(now);
                     day3Date.setDate(now.getDate() + 3);
                     const day3Btn = document.createElement('button');
@@ -667,11 +673,13 @@
                     day3Btn.textContent = days[day3Date.getDay()];
                     filtersContainer.appendChild(day3Btn);
                     
+                    // Agregar botón de ordenar
                     const sortBtn = document.createElement('button');
                     sortBtn.id = 'sort-btn';
                     sortBtn.textContent = '↓↑ Ordenar';
                     filtersContainer.appendChild(sortBtn);
                     
+                    // Re-asignar event listeners
                     document.querySelectorAll('.day-filter').forEach(btn => {
                         btn.addEventListener('click', (e) => {
                             const day = e.target.dataset.day;
@@ -770,12 +778,10 @@
 
                     if (visibleJobs.length === 0) {
                         jobList.style.display = 'none';
-                        // SOLO mostrar el mensaje si se ha agendado un trabajo
                         if (this.mostrarMensajeAgendado) {
                             emptyState.classList.add('visible');
                         } else {
                             emptyState.classList.remove('visible');
-                            // Mostrar un mensaje diferente cuando no hay ofertas disponibles sin haber agendado
                             emptyState.querySelector('.empty-icon').textContent = '📭';
                             emptyState.querySelector('.empty-title').textContent = 'No hay ofertas disponibles';
                             emptyState.querySelector('.empty-subtitle').textContent = 'Vuelve más tarde para ver nuevos recorridos.';
@@ -784,7 +790,6 @@
                     } else {
                         jobList.style.display = 'block';
                         emptyState.classList.remove('visible');
-                        // Restaurar el mensaje original por si acaso
                         emptyState.querySelector('.empty-icon').textContent = '✅';
                         emptyState.querySelector('.empty-title').textContent = '¡Trabajo agendado!';
                         emptyState.querySelector('.empty-subtitle').textContent = 'Has agendado todos los trabajos disponibles. Vuelve más tarde para ver nuevos recorridos.';
@@ -854,8 +859,6 @@
                     let dateText = '';
                     if (dayOffset === '0') {
                         dateText = 'Hoy';
-                    } else if (dayOffset === '1') {
-                        dateText = 'Mañana';
                     } else {
                         const futureDate = new Date(now);
                         futureDate.setDate(now.getDate() + parseInt(dayOffset));
@@ -870,7 +873,6 @@
                 }
 
                 agendarTrabajo() {
-                    // Evitar doble clic
                     if (this.isAgendando) return;
                     this.isAgendando = true;
 
@@ -879,20 +881,17 @@
                         jobCard.classList.add('hidden');
                         this.jobsAgendados.push(jobCard.dataset.job);
                         
-                        const tomorrowBtn = document.querySelector('.day-filter[data-day="1"]');
-                        if (tomorrowBtn) {
-                            tomorrowBtn.classList.remove('has-offer');
+                        // Remover la clase has-offer del botón del día +1
+                        const day1Btn = document.querySelector('.day-filter[data-day="1"]');
+                        if (day1Btn) {
+                            day1Btn.classList.remove('has-offer');
                         }
                         
-                        // Marcar que se ha agendado un trabajo
                         this.mostrarMensajeAgendado = true;
-                        
-                        // Mostrar toast de éxito
                         this.showToast('✅ ¡Trabajo agendado con éxito!');
                         
                         setTimeout(() => {
                             this.hideDetailScreen();
-                            // Ahora mostrar el empty state completo
                             this.checkAvailableJobs();
                             this.showToast('📋 Trabajo capturado: 100 PUNTOS ⭐');
                             this.isAgendando = false;
@@ -971,9 +970,8 @@
 
                 console.log('📦 Simulador cargado');
                 console.log('💡 Presiona ESPACIO para simular');
-                console.log('⭐ Solo "Mañana" tiene oferta de 100 puntos');
-                console.log('📋 Al entrar a "Disponibles" siempre muestra "Hoy"');
-                console.log('✅ El mensaje "¡Trabajo agendado!" SOLO aparece al hacer clic en "Agendar"');
+                console.log('⭐ El día +1 tiene oferta de 100 puntos');
+                console.log('📋 Al entrar a "Disponibles" muestra: Hoy, [día+1], [día+2], [día+3]');
             });
 
         })();
