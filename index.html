@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Envíos Extra - Simulador</title>
+    <!-- PWA Meta Tags completos -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Envios Extra">
+    <meta name="theme-color" content="#007aff">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <style>
+        /* ===== RESET ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        /* ===== APP ===== */
+        #app {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            min-height: 700px;
+        }
+
+        /* ===== STATUS BAR ===== */
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* ===== SCREENS ===== */
+        .screen {
+            display: none;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* ===== INICIO SCREEN ===== */
+        #inicio-screen {
+            display: none;
+            padding: 16px;
+            padding-bottom: 80px;
+            min-height: 500px;
+        }
+
+        #inicio-screen.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #inicio-screen .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        #inicio-screen .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-bottom: 8px;
+        }
+
+        #inicio-screen .empty-subtitle {
+            font-size: 14px;
+            color: #8e8e93;
+            max-width: 280px;
+            line-height: 1.5;
+        }
+
+        /* ===== DISPONIBLES SCREEN ===== */
+        #disponibles-screen {
+            display: none;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        #disponibles-screen.active {
+            display: block;
+        }
+
+        /* ===== FILTERS ===== */
+        #filters {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0 16px 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+        }
+
+        #filters button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: #f0f0f0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        #filters button.active {
+            background: #007aff;
+            color: white;
+        }
+
+        #filters button.has-offer {
+            background: #34c759;
+            color: white;
+        }
+
+        #filters button.has-offer.active {
+            background: #007aff;
+            color: white;
+        }
+
+        #sort-btn {
+            background: #e8e8e8;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 13px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* ===== JOB CARDS ===== */
+        .job-card {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .job-card.hidden {
+            display: none;
+        }
+
+        .job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .job-availability {
+            color: #34c759;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .job-info {
+            margin: 8px 0;
+        }
+
+        .job-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1c1c1e;
+        }
+
+        .job-location {
+            font-size: 14px;
+            color: #8e8e93;
+            margin-top: 4px;
+        }
+
+        .job-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .job-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1c1c1e;
+        }
+
+        .job-points {
+            background: #007aff;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .job-card .offer-badge {
+            background: #ff9500;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+
+        /* ===== EMPTY STATE EN DISPONIBLES ===== */
+        #empty-disponibles {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 60px 20px;
+            min-height: 400px;
+        }
+
+        #empty-disponibles.visible {
+            display: flex;
+        }
+
+        #empty-disponibles .empty-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        #empty-disponibles .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-bottom: 8px;
+        }
+
+        #empty-disponibles .empty-subtitle {
+            font-size: 14px;
+            color: #8e8e93;
+            max-width: 280px;
+            line-height: 1.5;
+        }
+
+        /* ===== DETAIL SCREEN ===== */
+        #detail-screen {
+            display: none;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        #detail-screen.active {
+            display: block;
+        }
+
+        #detail-content {
+            padding: 8px 0;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .detail-price {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .detail-points {
+            background: #007aff;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .detail-date {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 12px 0 4px 0;
+        }
+
+        .detail-time {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 12px;
+        }
+
+        .detail-location {
+            background: #f8f8f8;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        .detail-address {
+            color: #8e8e93;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .detail-map {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        .detail-map span {
+            background: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        #agendar-btn {
+            width: 100%;
+            padding: 16px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        #agendar-btn:hover {
+            background: #0066d9;
+            transform: scale(1.02);
+        }
+
+        #agendar-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        #bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-top: 1px solid #e8e8e8;
+            padding: 8px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            padding: 4px 16px;
+            cursor: pointer;
+            color: #8e8e93;
+            font-size: 10px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn span:first-child {
+            font-size: 22px;
+        }
+
+        .nav-btn.active {
+            color: #007aff;
+        }
+
+        .nav-btn:hover {
+            color: #007aff;
+        }
+
+        /* ===== SIMULATE BUTTON ===== */
+        #simulate-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: #ff3b30;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(255, 59, 48, 0.3);
+            transition: all 0.2s;
+            z-index: 999;
+        }
+
+        #simulate-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1c1c1e;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 420px) {
+            #app {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            #bottom-nav {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- STATUS BAR -->
+        <div id="status-bar">
+            <span id="time">6:12</span>
+            <span id="battery">100%</span>
+        </div>
+
+        <!-- INICIO SCREEN -->
+        <div id="inicio-screen" class="active">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">No tienes ningún recorrido activo</div>
+            <div class="empty-subtitle">Revisa para encontrar nuevos recorridos</div>
+        </div>
+
+        <!-- DISPONIBLES SCREEN -->
+        <div id="disponibles-screen">
+            <div id="filters">
+                <!-- Los filtros se generarán dinámicamente con JavaScript -->
+            </div>
+
+            <div id="job-list">
+                <!-- Oferta para el día siguiente (Mañana) - 100 PUNTOS -->
+                <div class="job-card" data-job="1" data-day-offset="1">
+                    <div class="job-header">
+                        <span class="job-availability">1 disponible</span>
+                        <span class="offer-badge">⭐ OFERTA DESTACADA</span>
+                    </div>
+                    <div class="job-info">
+                        <div class="job-time">11:30 a 19:30 hs (8 hs)</div>
+                        <div class="job-location">Inicia en Chillán, Chillán Viejo</div>
+                    </div>
+                    <div class="job-footer">
+                        <span class="job-price">$ 66.320</span>
+                        <span class="job-points">100 PUNTOS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State para cuando no hay disponibles -->
+            <div id="empty-disponibles">
+                <div class="empty-icon">✅</div>
+                <div class="empty-title">¡Trabajo agendado!</div>
+                <div class="empty-subtitle">Has agendado todos los trabajos disponibles. Vuelve más tarde para ver nuevos recorridos.</div>
+            </div>
+        </div>
+
+        <!-- DETAIL SCREEN -->
+        <div id="detail-screen">
+            <div id="detail-content">
+                <div class="detail-header">
+                    <span class="detail-price">$ 66.320</span>
+                    <span class="detail-points">100 PUNTOS</span>
+                </div>
+                <div class="detail-date" id="detail-date">Mañana</div>
+                <div class="detail-time">11:30 a 19:30 hs (8 hs)</div>
+                <div class="detail-location">
+                    <div>Inicia en Chillán, Chillán Viejo</div>
+                    <div class="detail-address">Avenida Libertador Bernardo O'Higgins 3637</div>
+                </div>
+                <div class="detail-map">
+                    <span>📍 Chillán</span>
+                    <span>N-66-Q</span>
+                    <span>Supermercado L</span>
+                    <span>Chillán-Viejo</span>
+                    <span>Bodega Outlet Chillán</span>
+                    <span>N-59-Q</span>
+                    <span>Google</span>
+                </div>
+                <button id="agendar-btn">Agendar</button>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION -->
+        <div id="bottom-nav">
+            <button class="nav-btn active" data-tab="inicio">
+                <span>🏠</span>
+                <span>Inicio</span>
+            </button>
+            <button class="nav-btn" data-tab="disponibles">
+                <span>📋</span>
+                <span>Disponibles</span>
+            </button>
+            <button class="nav-btn" data-tab="agendados">
+                <span>📅</span>
+                <span>Agendados</span>
+            </button>
+            <button class="nav-btn" data-tab="mas">
+                <span>⚙️</span>
+                <span>Más</span>
+            </button>
+        </div>
+    </div>
+
+    <button id="simulate-btn">🔔</button>
+
+    <script>
+        // ============================================================
+        //  ENVÍOS EXTRA - SIMULADOR COMPLETO
+        // ============================================================
+        (function () {
+            'use strict';
+
+            // ========== REGISTRAR SERVICE WORKER ==========
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(function (registration) {
+                            console.log('✅ Service Worker registrado');
+                        })
+                        .catch(function (err) {
+                            console.log('❌ Error SW:', err);
+                        });
+                });
+            }
+
+            // ========== CLASE PRINCIPAL ==========
+            class EnviosExtraSimulator {
+                constructor() {
+                    this.currentScreen = 'inicio';
+                    this.isDetailOpen = false;
+                    this.jobsAgendados = [];
+                    this.currentFilter = '0';
+                    this.isAgendando = false;
+                    this.mostrarMensajeAgendado = false; // ← NUEVO: controla cuándo mostrar el empty state
+                    this.init();
+                }
+
+                init() {
+                    this.setupEventListeners();
+                    this.updateTimeAndDate();
+                    setInterval(() => this.updateTimeAndDate(), 10000);
+                    
+                    this.generateFilters();
+                    this.applyFilter('0');
+                    
+                    // Asegurar que el empty state esté oculto al inicio
+                    document.getElementById('empty-disponibles').classList.remove('visible');
+                    document.getElementById('job-list').style.display = 'block';
+                    
+                    this.detectarAperturaDesdeTasker();
+                }
+
+                generateFilters() {
+                    const filtersContainer = document.getElementById('filters');
+                    filtersContainer.innerHTML = '';
+                    
+                    const now = new Date();
+                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    
+                    const todayBtn = document.createElement('button');
+                    todayBtn.className = 'day-filter active';
+                    todayBtn.dataset.day = '0';
+                    todayBtn.textContent = 'Hoy';
+                    filtersContainer.appendChild(todayBtn);
+                    
+                    const tomorrowBtn = document.createElement('button');
+                    tomorrowBtn.className = 'day-filter has-offer';
+                    tomorrowBtn.dataset.day = '1';
+                    tomorrowBtn.textContent = 'Mañana';
+                    filtersContainer.appendChild(tomorrowBtn);
+                    
+                    const day2Date = new Date(now);
+                    day2Date.setDate(now.getDate() + 2);
+                    const day2Btn = document.createElement('button');
+                    day2Btn.className = 'day-filter';
+                    day2Btn.dataset.day = '2';
+                    day2Btn.textContent = days[day2Date.getDay()];
+                    filtersContainer.appendChild(day2Btn);
+                    
+                    const day3Date = new Date(now);
+                    day3Date.setDate(now.getDate() + 3);
+                    const day3Btn = document.createElement('button');
+                    day3Btn.className = 'day-filter';
+                    day3Btn.dataset.day = '3';
+                    day3Btn.textContent = days[day3Date.getDay()];
+                    filtersContainer.appendChild(day3Btn);
+                    
+                    const sortBtn = document.createElement('button');
+                    sortBtn.id = 'sort-btn';
+                    sortBtn.textContent = '↓↑ Ordenar';
+                    filtersContainer.appendChild(sortBtn);
+                    
+                    document.querySelectorAll('.day-filter').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const day = e.target.dataset.day;
+                            this.applyFilter(day);
+                            const dayText = e.target.textContent;
+                            this.showToast(`Filtrando por: ${dayText}`);
+                        });
+                    });
+                    
+                    document.getElementById('sort-btn').addEventListener('click', () => {
+                        this.showToast('🔄 Ordenando trabajos...');
+                    });
+                }
+
+                detectarAperturaDesdeTasker() {
+                    const params = new URLSearchParams(window.location.search);
+                    if (params.get('tasker') === 'true') {
+                        console.log('🚀 Simulador abierto desde Tasker');
+                        setTimeout(() => this.ejecutarSimulacionAutomatica(), 1500);
+                    }
+                }
+
+                ejecutarSimulacionAutomatica() {
+                    this.showToast('📱 Abriendo Envíos Extra...');
+
+                    setTimeout(() => {
+                        this.switchTab('disponibles');
+                        this.showToast('✅ App abierta - Sección Disponibles');
+
+                        setTimeout(() => {
+                            const jobCard = document.querySelector('.job-card:not(.hidden)');
+                            if (jobCard) {
+                                jobCard.click();
+                                this.showToast('📋 Oferta seleccionada');
+
+                                setTimeout(() => {
+                                    const agendarBtn = document.getElementById('agendar-btn');
+                                    if (agendarBtn) {
+                                        agendarBtn.click();
+                                    }
+                                }, 1500);
+                            } else {
+                                this.showToast('⚠️ No hay ofertas disponibles');
+                            }
+                        }, 1500);
+                    }, 1000);
+                }
+
+                switchTab(tabName) {
+                    document.getElementById('inicio-screen').classList.remove('active');
+                    document.getElementById('disponibles-screen').classList.remove('active');
+                    document.getElementById('detail-screen').classList.remove('active');
+
+                    if (tabName === 'inicio') {
+                        document.getElementById('inicio-screen').classList.add('active');
+                    } else if (tabName === 'disponibles') {
+                        document.getElementById('disponibles-screen').classList.add('active');
+                        this.currentFilter = '0';
+                        this.applyFilter('0');
+                        this.checkAvailableJobs();
+                    } else if (tabName === 'detail') {
+                        document.getElementById('detail-screen').classList.add('active');
+                    }
+
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector(`.nav-btn[data-tab="${tabName}"]`)?.classList.add('active');
+                }
+
+                applyFilter(dayOffset) {
+                    this.currentFilter = dayOffset;
+                    const allJobs = document.querySelectorAll('.job-card');
+                    
+                    allJobs.forEach(job => {
+                        const jobDayOffset = job.dataset.dayOffset;
+                        if (jobDayOffset === dayOffset && !this.jobsAgendados.includes(job.dataset.job)) {
+                            job.classList.remove('hidden');
+                        } else {
+                            job.classList.add('hidden');
+                        }
+                    });
+
+                    document.querySelectorAll('.day-filter').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.day === dayOffset) {
+                            btn.classList.add('active');
+                        }
+                    });
+
+                    this.checkAvailableJobs();
+                }
+
+                checkAvailableJobs() {
+                    const visibleJobs = document.querySelectorAll('.job-card:not(.hidden)');
+                    const emptyState = document.getElementById('empty-disponibles');
+                    const jobList = document.getElementById('job-list');
+
+                    if (visibleJobs.length === 0) {
+                        jobList.style.display = 'none';
+                        // SOLO mostrar el mensaje si se ha agendado un trabajo
+                        if (this.mostrarMensajeAgendado) {
+                            emptyState.classList.add('visible');
+                        } else {
+                            emptyState.classList.remove('visible');
+                            // Mostrar un mensaje diferente cuando no hay ofertas disponibles sin haber agendado
+                            emptyState.querySelector('.empty-icon').textContent = '📭';
+                            emptyState.querySelector('.empty-title').textContent = 'No hay ofertas disponibles';
+                            emptyState.querySelector('.empty-subtitle').textContent = 'Vuelve más tarde para ver nuevos recorridos.';
+                            emptyState.classList.add('visible');
+                        }
+                    } else {
+                        jobList.style.display = 'block';
+                        emptyState.classList.remove('visible');
+                        // Restaurar el mensaje original por si acaso
+                        emptyState.querySelector('.empty-icon').textContent = '✅';
+                        emptyState.querySelector('.empty-title').textContent = '¡Trabajo agendado!';
+                        emptyState.querySelector('.empty-subtitle').textContent = 'Has agendado todos los trabajos disponibles. Vuelve más tarde para ver nuevos recorridos.';
+                    }
+                }
+
+                setupEventListeners() {
+                    document.querySelectorAll('.job-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            const cardElement = e.currentTarget;
+                            if (!cardElement.classList.contains('hidden')) {
+                                this.updateDetailFromCard(cardElement);
+                                this.showDetailScreen();
+                            }
+                        });
+                    });
+
+                    document.getElementById('agendar-btn').addEventListener('click', () => {
+                        this.agendarTrabajo();
+                    });
+
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const tab = e.currentTarget.dataset.tab;
+                            if (tab === 'inicio') {
+                                this.switchTab('inicio');
+                                this.showToast('📱 Inicio');
+                            } else if (tab === 'disponibles') {
+                                this.switchTab('disponibles');
+                                this.showToast('📋 Disponibles');
+                            } else if (tab === 'agendados') {
+                                this.showToast('📅 Agendados');
+                            } else if (tab === 'mas') {
+                                this.showToast('⚙️ Más');
+                            }
+                        });
+                    });
+
+                    document.addEventListener('keydown', (e) => {
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            this.simulateNotification();
+                        }
+                    });
+
+                    document.getElementById('simulate-btn').addEventListener('click', () => {
+                        this.simulateNotification();
+                    });
+                }
+
+                updateDetailFromCard(card) {
+                    const time = card.querySelector('.job-time')?.textContent || '11:30 a 19:30 hs (8 hs)';
+                    const location = card.querySelector('.job-location')?.textContent || 'Inicia en Chillán, Chillán Viejo';
+                    const price = card.querySelector('.job-price')?.textContent || '$ 66.320';
+                    const points = card.querySelector('.job-points')?.textContent || '100 PUNTOS';
+                    const dayOffset = card.dataset.dayOffset || '1';
+                    
+                    document.querySelector('.detail-price').textContent = price;
+                    document.querySelector('.detail-points').textContent = points;
+                    document.querySelector('.detail-time').textContent = time;
+                    document.querySelector('.detail-location div:first-child').textContent = location;
+                    
+                    const now = new Date();
+                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                    
+                    let dateText = '';
+                    if (dayOffset === '0') {
+                        dateText = 'Hoy';
+                    } else if (dayOffset === '1') {
+                        dateText = 'Mañana';
+                    } else {
+                        const futureDate = new Date(now);
+                        futureDate.setDate(now.getDate() + parseInt(dayOffset));
+                        const dayName = days[futureDate.getDay()];
+                        const dayNumber = futureDate.getDate();
+                        const monthName = months[futureDate.getMonth()];
+                        dateText = `${dayName} ${dayNumber} de ${monthName}`;
+                    }
+                    
+                    document.getElementById('detail-date').textContent = dateText;
+                    document.getElementById('agendar-btn').dataset.dayOffset = dayOffset;
+                }
+
+                agendarTrabajo() {
+                    // Evitar doble clic
+                    if (this.isAgendando) return;
+                    this.isAgendando = true;
+
+                    const jobCard = document.querySelector('.job-card:not(.hidden)');
+                    if (jobCard) {
+                        jobCard.classList.add('hidden');
+                        this.jobsAgendados.push(jobCard.dataset.job);
+                        
+                        const tomorrowBtn = document.querySelector('.day-filter[data-day="1"]');
+                        if (tomorrowBtn) {
+                            tomorrowBtn.classList.remove('has-offer');
+                        }
+                        
+                        // Marcar que se ha agendado un trabajo
+                        this.mostrarMensajeAgendado = true;
+                        
+                        // Mostrar toast de éxito
+                        this.showToast('✅ ¡Trabajo agendado con éxito!');
+                        
+                        setTimeout(() => {
+                            this.hideDetailScreen();
+                            // Ahora mostrar el empty state completo
+                            this.checkAvailableJobs();
+                            this.showToast('📋 Trabajo capturado: 100 PUNTOS ⭐');
+                            this.isAgendando = false;
+                        }, 1500);
+                    } else {
+                        this.showToast('⚠️ No hay trabajos disponibles para agendar');
+                        setTimeout(() => {
+                            this.hideDetailScreen();
+                            this.isAgendando = false;
+                        }, 1000);
+                    }
+                }
+
+                simulateNotification() {
+                    this.showToast('🔔 ¡Nuevo recorrido disponible!');
+
+                    const notificationEvent = new CustomEvent('tasker-notification', {
+                        detail: {
+                            app: 'com.mercadoenvios.crowdsourcing',
+                            title: 'Hay nuevos recorridos disponibles',
+                            text: 'Revisa los detalles y acepta el que prefieras.'
+                        }
+                    });
+                    document.dispatchEvent(notificationEvent);
+
+                    setTimeout(() => {
+                        this.showToast('📱 Abriendo Envíos Extra...');
+                        setTimeout(() => {
+                            this.switchTab('disponibles');
+                            this.showToast('✅ App abierta - Sección Disponibles');
+                        }, 800);
+                    }, 500);
+                }
+
+                showDetailScreen() {
+                    this.isDetailOpen = true;
+                    document.getElementById('inicio-screen').classList.remove('active');
+                    document.getElementById('disponibles-screen').classList.remove('active');
+                    document.getElementById('detail-screen').classList.add('active');
+                }
+
+                hideDetailScreen() {
+                    this.isDetailOpen = false;
+                    document.getElementById('detail-screen').classList.remove('active');
+                    document.getElementById('disponibles-screen').classList.add('active');
+                    this.currentFilter = '0';
+                    this.applyFilter('0');
+                    this.checkAvailableJobs();
+                }
+
+                showToast(message) {
+                    const oldToast = document.querySelector('.toast');
+                    if (oldToast) oldToast.remove();
+
+                    const toast = document.createElement('div');
+                    toast.className = 'toast';
+                    toast.textContent = message;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        if (toast) toast.remove();
+                    }, 2000);
+                }
+
+                updateTimeAndDate() {
+                    const now = new Date();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    document.getElementById('time').textContent = `${hours}:${minutes}`;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const simulator = new EnviosExtraSimulator();
+                window.simulator = simulator;
+
+                console.log('📦 Simulador cargado');
+                console.log('💡 Presiona ESPACIO para simular');
+                console.log('⭐ Solo "Mañana" tiene oferta de 100 puntos');
+                console.log('📋 Al entrar a "Disponibles" siempre muestra "Hoy"');
+                console.log('✅ El mensaje "¡Trabajo agendado!" SOLO aparece al hacer clic en "Agendar"');
+            });
+
+        })();
+    </script>
+
+</body>
+
+</html>
